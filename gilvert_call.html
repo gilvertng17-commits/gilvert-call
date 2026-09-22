@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gilvert Call - Random Video Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .video-container { transform: scaleX(-1); } /* Mirror effect for local webcam */
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
+
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-rose-500 to-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-rose-500/20">
+                <i class="fa-solid fa-video text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Gilvert Call</h1>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden p-2 sm:p-4 gap-4">
+        
+        <!-- Left Column: Video Feeds & Controls -->
+        <div class="flex-1 flex flex-col gap-4 min-h-0">
+            
+            <!-- Video Grid Area -->
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 min-h-0">
+                
+                <!-- Stranger Video Box -->
+                <div class="relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center shadow-2xl group">
+                    <video id="stranger-video" autoplay playsinline class="w-full h-full object-cover hidden"></video>
+                    <div id="stranger-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-950 p-6 text-center">
+                        <div class="w-20 h-20 rounded-full bg-slate-800 flex items-center justify-center text-slate-600 mb-4 border border-slate-700 shadow-inner">
+                            <i class="fa-solid fa-user-secret text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-300 mb-1" id="stranger-status-title">Ready to chat</h3>
+                        <p class="text-xs text-slate-500 max-w-xs" id="stranger-status-desc">Click "Start" below to connect with a random stranger worldwide.</p>
+                    </div>
+
+                    <!-- Stranger Info Overlay -->
+                    <div id="stranger-badge" class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/50 flex items-center space-x-2 text-xs hidden z-10">
+                        <span id="stranger-country-flag" class="text-base">🌐</span>
+                        <span id="stranger-name" class="font-medium text-slate-200">Stranger</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    </div>
+
+                    <!-- Video Controls Overlay on Hover -->
+                    <div class="absolute bottom-3 right-3 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="reportUser()" class="bg-rose-600/80 hover:bg-rose-600 text-white p-2 rounded-xl text-xs backdrop-blur-md transition" title="Report user">
+                            <i class="fa-solid fa-flag"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Local Webcam Video Box -->
+                <div class="relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center shadow-2xl">
+                    <video id="local-video" autoplay muted playsinline class="w-full h-full object-cover video-container"></video>
+                    <div id="local-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 p-6 text-center">
+                        <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 mb-3 border border-slate-700">
+                            <i class="fa-solid fa-video-slash text-2xl"></i>
+                        </div>
+                        <h3 class="text-sm font-medium text-slate-400">Webcam Disabled</h3>
+                        <p class="text-xs text-slate-600 mt-1">Camera will start when you click Start</p>
+                    </div>
+
+                    <!-- Local Badge -->
+                    <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/50 flex items-center space-x-2 text-xs">
+                        <span class="text-base">📍</span>
+                        <span class="font-medium text-slate-200">You (Guest)</span>
+                    </div>
+
+                    <!-- Media Toggle Floating Bar -->
+                    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-700/50 flex items-center space-x-3">
+                        <button onclick="toggleCam()" id="cam-btn" class="text-slate-300 hover:text-white p-1.5 rounded-xl transition" title="Toggle Camera">
+                            <i class="fa-solid fa-video text-sm" id="cam-icon"></i>
+                        </button>
+                        <div class="w-px h-4 bg-slate-700"></div>
+                        <button onclick="toggleMic()" id="mic-btn" class="text-slate-300 hover:text-white p-1.5 rounded-xl transition" title="Toggle Microphone">
+                            <i class="fa-solid fa-microphone text-sm" id="mic-icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Action Control Bar -->
+            <div class="bg-slate-900/90 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <div class="flex items-center space-x-2">
+                    <select id="country-filter" class="bg-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2 border border-slate-700 focus:outline-none focus:border-rose-500">
+                        <option value="worldwide">🌍 Worldwide</option>
+                        <option value="us">🇺🇸 United States</option>
+                        <option value="eu">🇪🇺 Europe</option>
+                        <option value="asia">🌏 Asia</option>
+                        <option value="latam">🌎 Latin America</option>
+                    </select>
+                    <div class="flex items-center space-x-1 bg-slate-800 px-3 py-2 rounded-xl border border-slate-700 text-xs">
+                        <input type="checkbox" id="cam-only-toggle" class="rounded bg-slate-900 border-slate-700 text-rose-500 focus:ring-0">
+                        <label for="cam-only-toggle" class="text-slate-300 cursor-pointer select-none">Cam Only</label>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button id="next-btn" onclick="handleNextClick()" class="bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition shadow-lg shadow-rose-600/30 flex items-center space-x-2">
+                        <span id="next-btn-text">Start</span>
+                        <i class="fa-solid fa-arrow-right text-xs" id="next-btn-icon"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Text Chat Area -->
+        <div class="w-full lg:w-80 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col h-64 lg:h-auto shrink-0 overflow-hidden shadow-2xl">
+            <div class="p-3.5 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-comments text-rose-500"></i>
+                    <h2 class="font-semibold text-sm text-slate-200">Live Chat</h2>
+                </div>
+                <span id="chat-status-badge" class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">Disconnected</span>
+            </div>
+
+            <!-- Chat Messages Log -->
+            <div id="chat-messages" class="flex-1 p-3 overflow-y-auto space-y-3 text-xs flex flex-col">
+                <div class="text-center text-slate-500 my-auto p-4">
+                    <i class="fa-solid fa-comment-slash text-2xl mb-2 text-slate-700"></i>
+                    <p>Connect with a stranger to start messaging!</p>
+                </div>
+            </div>
+
+            <!-- Chat Input Form -->
+            <form id="chat-form" onsubmit="sendChatMessage(event)" class="p-3 border-t border-slate-800 bg-slate-900/50 flex items-center space-x-2">
+                <input type="text" id="chat-input" placeholder="Type a message..." disabled class="flex-1 bg-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2.5 border border-slate-700 focus:outline-none focus:border-rose-500 disabled:opacity-50">
+                <button type="submit" id="chat-send-btn" disabled class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-50 disabled:hover:bg-rose-600">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+
+    </main>
+
+    <script>
+        // State Management
+        let appState = 'idle'; // 'idle', 'searching', 'connected'
+        let localStream = null;
+        let isCamActive = true;
+        let isMicActive = true;
+        let searchInterval = null;
+        let activeStrangerTimer = null;
+        let currentStranger = null;
+
+        // Preset realistic simulation strangers
+        const simulatedStrangers = [
+            { name: "Alex M.", country: "🇺🇸 United States", flag: "🇺🇸", avatarBg: "from-blue-600 to-indigo-700", messages: ["Hey there!", "How is it going?", "What are you up to today?", "Cool weather over here right now."] },
+            { name: "Sophie L.", country: "🇫🇷 France", flag: "🇫🇷", avatarBg: "from-pink-600 to-rose-700", messages: ["Bonjour! 🥐", "Nice to meet you!", "Where are you chatting from?", "I love meeting new people on here."] },
+            { name: "Kenji T.", country: "🇯🇵 Japan", flag: "🇯🇵", avatarBg: "from-amber-600 to-red-700", messages: ["Hello!", "Greetings from Tokyo!", "What kind of music do you like?", "Nice talking to you!"] },
+            { name: "Mateo G.", country: "🇧🇷 Brazil", flag: "🇧🇷", avatarBg: "from-emerald-600 to-teal-700", messages: ["E aí! Tudo bem?", "Greetings from Rio!", "Have a great day ahead!"] },
+            { name: "Elena R.", country: "🇩🇪 Germany", flag: "🇩🇪", avatarBg: "from-purple-600 to-indigo-700", messages: ["Hi there!", "Hope you're having a good week.", "What are your hobbies?"] }
+        ];
+
+        // DOM Elements
+        const localVideo = document.getElementById('local-video');
+        const localPlaceholder = document.getElementById('local-placeholder');
+        const strangerVideo = document.getElementById('stranger-video');
+        const strangerPlaceholder = document.getElementById('stranger-placeholder');
+        const strangerBadge = document.getElementById('stranger-badge');
+        const strangerName = document.getElementById('stranger-name');
+        const strangerCountryFlag = document.getElementById('stranger-country-flag');
+        const strangerStatusTitle = document.getElementById('stranger-status-title');
+        const strangerStatusDesc = document.getElementById('stranger-status-desc');
+        const nextBtn = document.getElementById('next-btn');
+        const nextBtnText = document.getElementById('next-btn-text');
+        const nextBtnIcon = document.getElementById('next-btn-icon');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const chatStatusBadge = document.getElementById('chat-status-badge');
+        const camBtn = document.getElementById('cam-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const camIcon = document.getElementById('cam-icon');
+        const micIcon = document.getElementById('mic-icon');
+
+        // Initialize local webcam stream
+        async function initWebcam() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                localPlaceholder.classList.add('hidden');
+            } catch (err) {
+                console.warn('Webcam access denied or unavailable. Using virtual simulation mode.', err);
+                localPlaceholder.innerHTML = `
+                    <div class="w-16 h-16 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mb-3 border border-rose-500/30">
+                        <i class="fa-solid fa-camera text-2xl"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-slate-300">Webcam Simulation Active</h3>
+                    <p class="text-xs text-slate-500 mt-1">Camera permission skipped. Ready to chat!</p>
+                `;
+            }
+        }
+
+        // Main Action Button Handler ("Start" / "Next" / "Stop")
+        async function handleNextClick() {
+            if (appState === 'idle') {
+                await initWebcam();
+                startSearching();
+            } else if (appState === 'searching') {
+                stopSearching();
+            } else if (appState === 'connected') {
+                disconnectStranger();
+                startSearching();
+            }
+        }
+
+        // Start Searching for a Stranger Queue
+        function startSearching() {
+            appState = 'searching';
+            nextBtnText.textContent = 'Stop';
+            nextBtnIcon.className = 'fa-solid fa-square text-xs';
+            nextBtn.className = 'bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition shadow-lg shadow-amber-600/30 flex items-center space-x-2';
+
+            // Reset stranger view
+            strangerVideo.classList.add('hidden');
+            strangerPlaceholder.classList.remove('hidden');
+            strangerBadge.classList.add('hidden');
+            strangerStatusTitle.textContent = 'Searching for a stranger...';
+            strangerStatusDesc.textContent = 'Looking for someone available to chat with you right now.';
+            
+            chatStatusBadge.textContent = 'Searching...';
+            chatStatusBadge.className = 'text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20';
+            chatInput.disabled = true;
+            chatSendBtn.disabled = true;
+
+            // Simulate finding someone after 1.5 to 3 seconds
+            const searchDelay = Math.floor(Math.random() * 1500) + 1500;
+            searchInterval = setTimeout(() => {
+                connectToRandomStranger();
+            }, searchDelay);
+        }
+
+        // Stop Searching
+        function stopSearching() {
+            if (searchInterval) clearTimeout(searchInterval);
+            if (activeStrangerTimer) clearTimeout(activeStrangerTimer);
+            appState = 'idle';
+            nextBtnText.textContent = 'Start';
+            nextBtnIcon.className = 'fa-solid fa-arrow-right text-xs';
+            nextBtn.className = 'bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition shadow-lg shadow-rose-600/30 flex items-center space-x-2';
+
+            strangerStatusTitle.textContent = 'Ready to chat';
+            strangerStatusDesc.textContent = 'Click "Start" below to connect with a random stranger worldwide.';
+            chatStatusBadge.textContent = 'Disconnected';
+            chatStatusBadge.className = 'text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full';
+        }
+
+        // Connect to a Simulated Stranger
+        function connectToRandomStranger() {
+            appState = 'connected';
+            nextBtnText.textContent = 'Next';
+            nextBtnIcon.className = 'fa-solid fa-forward text-xs';
+            nextBtn.className = 'bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition shadow-lg shadow-rose-600/30 flex items-center space-x-2';
+
+            // Pick random stranger profile
+            currentStranger = simulatedStrangers[Math.floor(Math.random() * simulatedStrangers.length)];
+            
+            strangerPlaceholder.classList.add('hidden');
+            strangerVideo.classList.remove('hidden');
+            strangerBadge.classList.remove('hidden');
+            strangerName.textContent = currentStranger.name;
+            strangerCountryFlag.textContent = currentStranger.flag;
+
+            // Render dummy video stream
+            setupStrangerVideoStream(currentStranger.avatarBg);
+
+            chatStatusBadge.textContent = 'Connected';
+            chatStatusBadge.className = 'text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20';
+            chatInput.disabled = false;
+            chatSendBtn.disabled = false;
+
+            // Clear chat log and add system connection notice
+            chatMessages.innerHTML = `
+                <div class="text-center my-2">
+                    <span class="bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-[10px] border border-slate-700">You are now chatting with a random stranger. Say hi!</span>
+                </div>
+            `;
+
+            // Trigger automated stranger greeting after 1 second
+            setTimeout(() => {
+                const greeting = currentStranger.messages[Math.floor(Math.random() * currentStranger.messages.length)];
+                appendChatMessage(currentStranger.name, greeting, 'received');
+            }, 1000);
+        }
+
+        // Setup a vibrant canvas fallback stream for the stranger
+        function setupStrangerVideoStream(bgGradient) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 640;
+            canvas.height = 480;
+            const ctx = canvas.getContext('2d');
+            
+            let angle = 0;
+            function drawAvatarStream() {
+                if (appState !== 'connected') return;
+                
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, 640, 480);
+                
+                ctx.beginPath();
+                ctx.arc(320 + Math.sin(angle) * 40, 240 + Math.cos(angle) * 30, 120, 0, Math.PI * 2);
+                ctx.fillStyle = '#1e293b';
+                ctx.fill();
+
+                ctx.font = 'bold 80px Inter, sans-serif';
+                ctx.fillStyle = '#f8fafc';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(currentStranger.name.charAt(0), 320, 230);
+
+                ctx.font = '20px Inter, sans-serif';
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillText(currentStranger.country, 320, 300);
+
+                angle += 0.03;
+                requestAnimationFrame(drawAvatarStream);
+            }
+
+            if (!strangerVideo.srcObject) {
+                const stream = canvas.captureStream(30);
+                strangerVideo.srcObject = stream;
+            }
+            drawAvatarStream();
+        }
+
+        // Disconnect Stranger
+        function disconnectStranger() {
+            if (activeStrangerTimer) clearTimeout(activeStrangerTimer);
+            strangerVideo.srcObject = null;
+        }
+
+        // Send Chat Message
+        function sendChatMessage(e) {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text || appState !== 'connected') return;
+
+            appendChatMessage('You', text, 'sent');
+            chatInput.value = '';
+
+            // Simulate stranger reply after 1.5 seconds
+            setTimeout(() => {
+                if (appState === 'connected') {
+                    const replies = [
+                        "That's really interesting!",
+                        "Haha for real?",
+                        "Tell me more about that!",
+                        "Oh nice! I didn't know that.",
+                        "Cool! What else do you like to do?"
+                    ];
+                    const reply = replies[Math.floor(Math.random() * replies.length)];
+                    appendChatMessage(currentStranger.name, reply, 'received');
+                }
+            }, 1500);
+        }
+
+        // Append Chat Message to Log
+        function appendChatMessage(sender, text, type) {
+            const isSent = type === 'sent';
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex flex-col ${isSent ? 'items-end' : 'items-start'} space-y-1`;
+            msgDiv.innerHTML = `
+                <span class="text-[10px] text-slate-500 px-1">${sender}</span>
+                <div class="${isSent ? 'bg-rose-600 text-white rounded-2xl rounded-tr-sm' : 'bg-slate-800 text-slate-200 rounded-2xl rounded-tl-sm'} px-3.5 py-2 max-w-[85%] break-words shadow-sm">
+                    ${escapeHtml(text)}
+                </div>
+            `;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Toggle Local Cam
+        function toggleCam() {
+            if (localStream) {
+                const videoTrack = localStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    isCamActive = !isCamActive;
+                    videoTrack.enabled = isCamActive;
+                    camBtn.className = isCamActive ? 'text-slate-300 hover:text-white p-1.5 rounded-xl transition' : 'text-rose-400 hover:text-rose-300 p-1.5 rounded-xl transition bg-rose-500/10';
+                    camIcon.className = isCamActive ? 'fa-solid fa-video text-sm' : 'fa-solid fa-video-slash text-sm';
+                }
+            }
+        }
+
+        // Toggle Local Mic
+        function toggleMic() {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    isMicActive = !isMicActive;
+                    audioTrack.enabled = isMicActive;
+                    micBtn.className = isMicActive ? 'text-slate-300 hover:text-white p-1.5 rounded-xl transition' : 'text-rose-400 hover:text-rose-300 p-1.5 rounded-xl transition bg-rose-500/10';
+                    micIcon.className = isMicActive ? 'fa-solid fa-microphone text-sm' : 'fa-solid fa-microphone-slash text-sm';
+                }
+            }
+        }
+
+        // Report User Function
+        function reportUser() {
+            alert('User reported successfully. Skipping to next chat...');
+            handleNextClick();
+        }
+
+        // Utility: Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
